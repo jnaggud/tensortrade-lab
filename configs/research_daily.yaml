@@ -1,0 +1,58 @@
+datasets:
+- name: BTC-local
+  path: data/local/BTCUSD_1d.parquet
+- name: SPY
+  path: data/yahoo/SPY_1d.parquet
+- name: QQQ
+  path: data/yahoo/QQQ_1d.parquet
+- name: AAPL
+  path: data/yahoo/AAPL_1d.parquet
+timeframes:
+- 1440
+strategies:
+- momentum
+- mean_reversion
+- breakout
+- supervised
+- ppo
+directions:
+- long_only
+- long_short
+parameters:
+  policy.lookback_minutes:
+  - 7200
+  - 28800
+  policy.threshold:
+  - 0.002
+  - 0.01
+  training.learning_rate:
+  - 0.0001
+  - 0.0003
+method: grid
+trials: 32
+seeds:
+- 17
+- 42
+folds: 2
+config:
+  features:
+    observation_minutes: 11520
+    reference_minutes: 1440
+  risk:
+    cooldown_minutes: 2880
+    borrow_available: true
+  split:
+    purge_bars: 2
+  execution:
+    commission: 0.0005
+    slippage_bps: 5
+  training:
+    total_timesteps: 1024
+    n_steps: 256
+    batch_size: 64
+    n_epochs: 3
+    eval_every: 512
+  compute:
+    device: hybrid
+    workers: 0
+    threads_per_worker: 1

@@ -1,0 +1,19 @@
+TensorTrade Lab
+Copyright 2026 Jefferson Duggan
+
+This repository contains an independent research application built on TensorTrade.
+TensorTrade is developed by the TensorTrade contributors and licensed under the
+Apache License, Version 2.0. It is fetched as a pinned dependency rather than
+vendored into this repository:
+https://github.com/tensortrade-org/tensortrade
+Commit: d58afba23deb1fded39793203b7997c3990bb032
+
+Other installed dependencies retain their respective licenses. The project
+license does not replace the licenses of TensorTrade, Stable-Baselines3, PyTorch,
+Optuna, Streamlit, NumPy, pandas, or other third-party packages.
+
+Research references include Zura Kakushadze and Juan Andrés Serur,
+"151 Trading Strategies" (2018), SSRN 3247865:
+https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3247865
+The source paper, figures, full-text extracts, external project snapshots, and
+third-party market datasets are not included or relicensed by this repository.

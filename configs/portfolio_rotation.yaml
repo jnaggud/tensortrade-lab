@@ -1,0 +1,40 @@
+name: portfolio-rotation
+# Fixed for economic coverage, not selected using the upcoming backtest.
+universe: [XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, XLY, EFA, EEM, IEF, TLT, GLD]
+benchmark: SPY
+download_start: '2004-01-01'
+download_end: '2026-09-24'
+data_directory: data/rotation
+lookbacks: [126, 252]
+frequencies: [weekly, monthly]
+weightings: [equal, inverse_volatility]
+top_k: 3
+skip_recent: 21
+supervised_frequencies: [weekly, monthly]
+supervised_seed: 17
+label_horizon: 21
+folds:
+  - {name: recovery, start: '2010-01-01', end: '2015-01-01'}
+  - {name: expansion, start: '2015-01-01', end: '2020-01-01'}
+  - {name: pandemic_inflation, start: '2020-01-01', end: '2023-01-01'}
+confirmation: {name: recent_seen, start: '2023-01-01', end: '2026-09-24'}
+commission: 0.0005
+slippage: 0.0005
+initial_cash: 10000.0
+bootstrap_samples: 2000
+bootstrap_block: 63
+seed: 20260924
+gate:
+  positive_fold_fraction: 0.6666666666666666
+  drawdown_tolerance: 0.02
+  volatility_ratio_limit: 1.10
+  adjusted_p_limit: 0.05
+rl:
+  timesteps: 100000
+  seeds: [17, 42, 83]
+  hidden_sizes: [64, 64]
+  learning_rate: 0.0003
+  n_steps: 1024
+  batch_size: 256
+  n_epochs: 5
+compute: {workers: 0, threads_per_worker: 1, device: cpu, vector_envs: 1}

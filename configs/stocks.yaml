@@ -1,0 +1,9 @@
+market:
+  symbol: SPY
+  calendar: XNYS
+  bar_minutes: 1440
+  periods_per_year: 252
+  price_adjustment: split_adjusted
+features:
+  reference_minutes: 1440
+  window: 8

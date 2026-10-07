@@ -1,0 +1,59 @@
+//@version=6
+strategy("151 #09 AlphaCombo | Research", overlay=true, initial_capital=10000, currency=currency.USD, default_qty_type=strategy.percent_of_equity, default_qty_value=99.8, commission_type=strategy.commission.percent, commission_value=0.10, slippage=0, pyramiding=0, margin_long=100, margin_short=100, process_orders_on_close=false, calc_on_every_tick=false, calc_on_order_fills=false)
+// EXPERIMENTAL. Selected by the declared local cross-market ranking, not a proven winner.
+// Fixed rule: AlphaCombo. Local results and failures: research/paper151/expanded_results.
+// Use standard DAILY candles with dividend adjustment OFF (splits allowed).
+// 0.10% fee approximates US 5bps fee + 5bps slippage; set 0.15% for BTC.
+// Pine slippage is ticks, so this proxy is not identical to the local ledger.
+// No idle-cash interest or automatic dividend reinvestment in this emulator.
+// Exact local-vs-Pine PnL reconciliation remains required; signals use completed bars.
+start=input.time(timestamp("30 Dec 2016 21:00 +0000"),"First eligible signal close (US sample default)")
+stop=input.time(timestamp("01 Jan 2030 00:00 +0000"),"Stop sending entry signals")
+if not chart.is_standard or not timeframe.isdaily or timeframe.multiplier!=1
+    runtime.error("Use standard 1-day candles.")
+ma20=ta.sma(close,20)
+ma50=ta.sma(close,50)
+ma200=ta.sma(close,200)
+hi55=ta.highest(high,55)[1]
+lo20=ta.lowest(low,20)[1]
+hi20=ta.highest(high,20)[1]
+ibs=high>low?(close-low)/(high-low):0.5
+// Derive cash distributions on the same split-adjusted share basis as close.
+// Adjacent adjustment-factor ratios cancel any common later rescaling.
+adjustedClose=request.security(ticker.modify(syminfo.tickerid,adjustment=adjustment.dividends),timeframe.period,close,gaps=barmerge.gaps_on,lookahead=barmerge.lookahead_off)
+priceFactor=close/adjustedClose
+impliedDistribution=na(priceFactor[1])?0.0:close[1]*(1.0-priceFactor/priceFactor[1])
+div=math.abs(impliedDistribution)<0.000001?0.0:impliedDistribution
+trReturn=na(close[1])?0.0:(close+div)/close[1]-1.0
+logTR=ta.cum(math.log(1.0+trReturn))
+mom=logTR>logTR[252]
+var bool channelTrend=false
+if close>hi55
+    channelTrend:=true
+else if close<lo20
+    channelTrend:=false
+var int entryBar=na
+if strategy.position_size>0 and strategy.position_size[1]==0
+    entryBar:=bar_index
+if strategy.position_size==0
+    entryBar:=na
+held=na(entryBar)?0:bar_index-entryBar+1
+bool enter=false
+bool leave=false
+votes=(close>ma200?1:0)+(mom?1:0)+(channelTrend?1:0)
+enter:=votes>=2
+leave:=votes<2
+
+eligible=time_close>=start and time_close<stop and not na(ma200) and not na(logTR[252])
+if barstate.isconfirmed
+    if strategy.position_size>0 and (leave or time_close>=stop)
+        strategy.close_all(comment="Next-open exit")
+    else if strategy.position_size==0 and eligible and enter
+        strategy.entry("Long",strategy.long)
+plot(ma50,"SMA50",color=color.aqua)
+plot(ma200,"SMA200",color=color.orange)
+bgcolor(strategy.position_size>0?color.new(color.teal,91):na)
+var table note=table.new(position.bottom_right,1,2)
+if barstate.islastconfirmedhistory or barstate.isrealtime
+    table.cell(note,0,0,"EXPLORATORY — not broadly qualified",text_color=color.orange,bgcolor=color.new(color.black,10))
+    table.cell(note,0,1,"Local study is authoritative; reconcile this emulator",text_color=color.white,bgcolor=color.new(color.black,10))

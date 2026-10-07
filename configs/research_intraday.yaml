@@ -1,0 +1,54 @@
+datasets:
+- name: SPY
+  path: data/yahoo/SPY_15m.parquet
+- name: QQQ
+  path: data/yahoo/QQQ_15m.parquet
+- name: AAPL
+  path: data/yahoo/AAPL_15m.parquet
+timeframes:
+- 15
+- 60
+strategies:
+- momentum
+- mean_reversion
+- breakout
+- supervised
+- ppo
+directions:
+- long_only
+- long_short
+parameters:
+  policy.lookback_minutes:
+  - 60
+  - 240
+  policy.threshold:
+  - 0.001
+  - 0.005
+method: tpe
+trials: 48
+seeds:
+- 17
+- 42
+folds: 2
+config:
+  features:
+    observation_minutes: 120
+    reference_minutes: 60
+  risk:
+    cooldown_minutes: 60
+    borrow_available: true
+  split:
+    purge_bars: 2
+  execution:
+    commission: 0.0005
+    slippage_bps: 5
+  training:
+    total_timesteps: 1024
+    n_steps: 256
+    batch_size: 64
+    n_epochs: 3
+    eval_every: 512
+  compute:
+    device: hybrid
+    workers: 0
+    threads_per_worker: 1

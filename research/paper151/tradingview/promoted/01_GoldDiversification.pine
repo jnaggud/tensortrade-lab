@@ -1,0 +1,71 @@
+//@version=6
+indicator("151 #01 GoldDiversification | Research", overlay=false, max_bars_back=300, dynamic_requests=true)
+// Portfolio SIGNAL indicator: NOT a native Strategy Tester portfolio backtest.
+// Local engine accounts for simultaneous legs, costs, distributions and cash.
+// Shows target weights at the current bar open, based entirely on preceding bars.
+// Between rebalances these are the last target weights, not drifted live weights.
+// Fixed rule: GoldDiversification. Exploratory shortlist; no broad economic qualification.
+start=input.time(timestamp("01 Jan 2017 00:00 +0000"),"First eligible execution day")
+if not chart.is_standard or not timeframe.isdaily or timeframe.multiplier!=1
+    runtime.error("Use a standard 1-day US equity/ETF chart.")
+f_stats() =>
+    // Derive cash distributions on the same split-adjusted share basis as close.
+    // Adjacent adjustment-factor ratios cancel any common later rescaling.
+    adjustedClose=request.security(ticker.modify(syminfo.tickerid,adjustment=adjustment.dividends),timeframe.period,close,gaps=barmerge.gaps_on,lookahead=barmerge.lookahead_off)
+    priceFactor=close/adjustedClose
+    impliedDistribution=na(priceFactor[1])?0.0:close[1]*(1.0-priceFactor/priceFactor[1])
+    distribution=math.abs(impliedDistribution)<0.000001?0.0:impliedDistribution
+    r=na(close[1])?0.0:(close+distribution)/close[1]-1.0
+    logTR=ta.cum(math.log(1.0+r))
+    strength=high>low?(close-low)/(high-low):0.5
+    [close[1],ta.sma(close,200)[1],math.exp(logTR[1]-logTR[253])-1.0,math.exp(logTR[22]-logTR[253])-1.0,ta.stdev(r,63,false)[1]*math.sqrt(252.0),strength[1],r[1]]
+var symbols=array.from("AMEX:SPY", "AMEX:GLD")
+var weights=array.new_float(2,0.0)
+var bool started=false
+prices=array.new_float(2,na)
+mas=array.new_float(2,na)
+mom=array.new_float(2,na)
+skipMom=array.new_float(2,na)
+vols=array.new_float(2,na)
+strengths=array.new_float(2,na)
+returns=array.new_float(2,na)
+bool ready=true
+[p0,m0,v0,s0,vol0,b0,r0]=request.security("AMEX:SPY",timeframe.period,f_stats(),gaps=barmerge.gaps_on,lookahead=barmerge.lookahead_off)
+array.set(prices,0,p0)
+array.set(mas,0,m0)
+array.set(mom,0,v0)
+array.set(skipMom,0,s0)
+array.set(vols,0,vol0)
+array.set(strengths,0,b0)
+array.set(returns,0,r0)
+ready:=ready and not na(v0) and not na(m0) and not na(vol0)
+[p1,m1,v1,s1,vol1,b1,r1]=request.security("AMEX:GLD",timeframe.period,f_stats(),gaps=barmerge.gaps_on,lookahead=barmerge.lookahead_off)
+array.set(prices,1,p1)
+array.set(mas,1,m1)
+array.set(mom,1,v1)
+array.set(skipMom,1,s1)
+array.set(vols,1,vol1)
+array.set(strengths,1,b1)
+array.set(returns,1,r1)
+ready:=ready and not na(v1) and not na(m1) and not na(vol1)
+rebalance=ready and time>=start and (timeframe.change("M") or not started)
+if rebalance
+    array.fill(weights,0.0)
+    started:=true
+    array.set(weights,0,0.8)
+    array.set(weights,1,0.2)
+plot(started?array.get(weights,0)*100:na,"SPY target %",color=color.aqua,style=plot.style_stepline)
+plot(started?array.get(weights,1)*100:na,"GLD target %",color=color.orange,style=plot.style_stepline)
+plot(started?(1.0-array.sum(weights))*100:na,"Cash target %",color=color.gray,style=plot.style_stepline)
+plotshape(rebalance,title="Rebalance using preceding close",style=shape.diamond,location=location.bottom,color=color.white,size=size.tiny)
+var table dashboard=table.new(position.top_right,2,5,border_width=1)
+if barstate.islast
+    table.cell(dashboard,0,0,"EXPLORATORY TARGETS",text_color=color.orange)
+    table.cell(dashboard,1,0,"No portfolio backtest",text_color=color.orange)
+    for i=0 to 1
+        table.cell(dashboard,0,i+1,array.get(symbols,i),text_color=color.white)
+        table.cell(dashboard,1,i+1,started?str.tostring(100*array.get(weights,i),"#.##")+"%":"Waiting",text_color=color.white)
+    table.cell(dashboard,0,3,"Cash",text_color=color.white)
+    table.cell(dashboard,1,3,started?str.tostring(100*(1-array.sum(weights)),"#.##")+"%":"Waiting",text_color=color.white)
+    table.cell(dashboard,0,4,"Data",text_color=color.white)
+    table.cell(dashboard,1,4,ready?"Complete prior bars":"Missing / warming up",text_color=ready?color.lime:color.red)
