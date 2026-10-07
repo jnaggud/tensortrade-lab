@@ -25,10 +25,10 @@ jobs:
         with:
           python-version: '3.12'
           enable-cache: true
-      - run: uv sync --frozen --extra dev --extra research --no-editable
-      - run: uv run --frozen --no-editable ruff check src tests scripts
-      - run: uv run --frozen --no-editable ruff format --check src tests scripts
-      - run: uv run --frozen --no-editable python scripts/check_release.py
-      - run: uv run --frozen --no-editable pytest -q
+      - run: uv sync --frozen --extra dev --extra research --extra cpu --no-editable
+      - run: uv run --frozen --no-editable --extra cpu ruff check src tests scripts
+      - run: uv run --frozen --no-editable --extra cpu ruff format --check src tests scripts
+      - run: uv run --frozen --no-editable --extra cpu python scripts/check_release.py
+      - run: uv run --frozen --no-editable --extra cpu pytest -q
       - name: Synthetic CLI smoke test
-        run: uv run --frozen --no-editable ttlab demo --rows 1200 --timesteps 256 --output runs/ci-smoke
+        run: uv run --frozen --no-editable --extra cpu ttlab demo --rows 1200 --timesteps 256 --output runs/ci-smoke

@@ -15,9 +15,9 @@ timestamp,open,high,low,close,volume
 Real input needs substantially more history than this format example. The defaults need at least roughly 400 candles to survive feature warmup, purging, and splits; meaningful research needs much more history across different market conditions. Prices must be positive, volume nonnegative, OHLC bounds valid, and timestamps unique. Missing hourly bars, NaNs, and descending rows fail validation rather than being silently repaired. Volume should use a consistent unit across the dataset.
 
 ```bash
-uv run --no-editable ttlab validate --data data/btc_usd_1h.csv --config configs/default.yaml
-uv run --no-editable ttlab train --data data/btc_usd_1h.csv --config configs/default.yaml
-uv run --no-editable ttlab walk-forward --data data/btc_usd_1h.csv --config configs/default.yaml --folds 3
+uv run --no-editable --extra cpu ttlab validate --data data/btc_usd_1h.csv --config configs/default.yaml
+uv run --no-editable --extra cpu ttlab train --data data/btc_usd_1h.csv --config configs/default.yaml
+uv run --no-editable --extra cpu ttlab walk-forward --data data/btc_usd_1h.csv --config configs/default.yaml --folds 3
 ```
 
 `--timesteps 10000` overrides training duration. PPO completes rollout batches, so actual steps can exceed the requested number; the manifest records the actual count. Validation patience can stop training early.
@@ -25,8 +25,8 @@ uv run --no-editable ttlab walk-forward --data data/btc_usd_1h.csv --config conf
 To generate more test data:
 
 ```bash
-uv run --no-editable ttlab sample --rows 6000 --output data/synthetic_hourly.csv
-uv run --no-editable ttlab train --data data/synthetic_hourly.csv --timesteps 10000
+uv run --no-editable --extra cpu ttlab sample --rows 6000 --output data/synthetic_hourly.csv
+uv run --no-editable --extra cpu ttlab train --data data/synthetic_hourly.csv --timesteps 10000
 ```
 
 The generator adds a metadata sidecar identifying synthetic data. Keep it with the CSV. For other synthetic files, pass `--synthetic`.
@@ -36,8 +36,8 @@ The generator adds a metadata sidecar identifying synthetic data. Keep it with t
 Replace `runs/run-...` with the checkpoint directory printed after training.
 
 ```bash
-uv run --no-editable ttlab backtest --run runs/run-... --data data/btc_usd_1h.csv
-uv run --no-editable ttlab paper --run runs/run-... --data data/btc_usd_1h.csv --state runs/paper/account.json
+uv run --no-editable --extra cpu ttlab backtest --run runs/run-... --data data/btc_usd_1h.csv
+uv run --no-editable --extra cpu ttlab paper --run runs/run-... --data data/btc_usd_1h.csv --state runs/paper/account.json
 ```
 
 Backtesting evaluates the candles after the model's validation boundary and permits historical context for warmup. The automatic training report instead evaluates only the purged test partition with its own warmup; these horizons intentionally differ. For a new, untouched holdout, provide a CSV whose evaluation candles were never used to make development decisions.
@@ -80,6 +80,22 @@ Walk-forward creates a full run per fold and a `folds.csv` / `summary.json`. Fol
 
 ## Compute and installation
 
-Use `uv run --no-editable ttlab hardware` to inspect available devices and `uv run --no-editable ttlab benchmark` to measure the relevant kernels. More GPU activity is not necessarily faster for small policies; worker and thread limits are explicit in the configuration.
+Use `uv run --no-editable --extra cpu ttlab hardware` to inspect available devices and `uv run --no-editable --extra cpu ttlab benchmark` to measure the relevant kernels. More GPU activity is not necessarily faster for small policies; worker and thread limits are explicit in the configuration.
 
-For macOS environments with hidden editable-install `.pth` files, use the wheel installation from the quick start. After modifying application source, run `uv sync --frozen --extra dev --extra research --no-editable --reinstall-package tensortrade-lab`.
+For macOS environments with hidden editable-install `.pth` files, use the wheel installation from the quick start. After modifying application source, run `uv sync --frozen --extra dev --extra research --extra cpu --no-editable --reinstall-package tensortrade-lab`.
+
+## GPU setup
+
+The quick start uses the `cpu` extra for a portable Linux/Windows installation. macOS uses the standard PyTorch build, which can expose Metal when available. CPU and GPU kernels can produce different floating-point results.
+
+On a Linux machine with a compatible NVIDIA driver, use a separate environment and select the `cu130` extra instead of `cpu`:
+
+```bash
+UV_PROJECT_ENVIRONMENT=.venv-cuda uv sync --frozen --extra dev --extra research --extra cu130 --no-editable
+UV_PROJECT_ENVIRONMENT=.venv-cuda uv run --frozen --no-editable --extra cu130 ttlab hardware
+UV_PROJECT_ENVIRONMENT=.venv-cuda uv run --frozen --no-editable --extra cu130 ttlab benchmark
+```
+
+This uses the locked CUDA 13.0 PyTorch build from the official PyTorch index. Driver compatibility and native library initialization must be verified on the target host before a large run; this release's Linux CI validates the CPU profile. Set the training device in your configuration only after `hardware` reports it available. The public release does not claim CUDA validation.
+
+See [uv's PyTorch integration guide](https://docs.astral.sh/uv/guides/integration/pytorch/) for platform-specific package selection.

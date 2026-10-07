@@ -7,17 +7,17 @@ TensorTrade Lab welcomes reproducible bug reports, accounting fixes, and clearly
 Use Python 3.12 and run commands from the repository root:
 
 ```bash
-uv sync --frozen --extra dev --extra research --no-editable
-uv run --frozen --no-editable pytest -q
-uv run --frozen --no-editable ruff check src tests scripts
-uv run --frozen --no-editable ruff format --check src tests scripts
+uv sync --frozen --extra dev --extra research --extra cpu --no-editable
+uv run --frozen --no-editable --extra cpu pytest -q
+uv run --frozen --no-editable --extra cpu ruff check src tests scripts
+uv run --frozen --no-editable --extra cpu ruff format --check src tests scripts
 python scripts/check_release.py
 ```
 
 The default suite creates synthetic inputs and temporary files. It does not download market data, start trading, or require credentials. Four TradingView reconciliation cases are marked `external_data` and skipped by default. To run them, supply the original matching Yahoo/rotation data under `data/` and native price/report exports under `research/paper151/tradingview/reconciliation/`, then use:
 
 ```bash
-uv run --frozen --no-editable pytest -q --run-data-tests
+uv run --frozen --no-editable --extra cpu pytest -q --run-data-tests
 ```
 
 The fixture deliberately fails if requested inputs are missing or inconsistent. It does not silently substitute synthetic data for these historical comparisons.

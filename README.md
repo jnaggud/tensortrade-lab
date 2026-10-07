@@ -31,14 +31,14 @@ Requires **Python 3.12** and [uv](https://docs.astral.sh/uv/). Run from the repo
 ```bash
 git clone https://github.com/jnaggud/tensortrade-lab.git
 cd tensortrade-lab
-uv sync --frozen --extra dev --extra research --no-editable
-uv run --frozen --no-editable ttlab demo
-uv run --frozen --no-editable ttlab dashboard
+uv sync --frozen --extra dev --extra research --extra cpu --no-editable
+uv run --frozen --no-editable --extra cpu ttlab demo
+uv run --frozen --no-editable --extra cpu ttlab dashboard
 ```
 
 Open **http://127.0.0.1:8501** and select **PPO training runs** in the sidebar. The demo generates its own data, trains a small policy, and produces an offline HTML report. No account, API key, or private dataset is needed. The initial installation downloads the pinned dependencies and TensorTrade source.
 
-For an application-only installation, omit `--extra dev --extra research`. Research extensions and the complete test suite require the research extra.
+For an application-only installation, omit `--extra dev --extra research`. Research extensions and the complete test suite require the research extra. The `cpu` extra selects CPU-only PyTorch on Linux/Windows; macOS keeps its standard PyTorch build with optional Metal support. See [GPU setup](docs/GETTING_STARTED.md#gpu-setup) for a separate CUDA environment.
 
 ## How an experiment works
 
@@ -76,10 +76,10 @@ This project demonstrates a research process, including unsuccessful hypotheses.
 ## Development
 
 ```bash
-uv sync --frozen --extra dev --extra research --no-editable
-uv run --frozen --no-editable pytest -q
-uv run --frozen --no-editable ruff check src tests scripts
-uv run --frozen --no-editable ruff format --check src tests scripts
+uv sync --frozen --extra dev --extra research --extra cpu --no-editable
+uv run --frozen --no-editable --extra cpu pytest -q
+uv run --frozen --no-editable --extra cpu ruff check src tests scripts
+uv run --frozen --no-editable --extra cpu ruff format --check src tests scripts
 python scripts/check_release.py
 ```
 

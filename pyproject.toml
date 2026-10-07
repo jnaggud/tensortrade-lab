@@ -33,6 +33,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "ruff>=0.9,<1"]
 research = ["databento>=0.70,<1", "beautifulsoup4>=4.12,<5", "scipy>=1.13,<2", "matplotlib>=3.8,<4"]
+cpu = ["torch>=2.3,<3"]
+cu130 = ["torch>=2.3,<3; sys_platform == 'linux' or sys_platform == 'win32'"]
 
 [project.urls]
 Repository = "https://github.com/jnaggud/tensortrade-lab"
@@ -42,8 +44,25 @@ Documentation = "https://github.com/jnaggud/tensortrade-lab/tree/main/docs"
 [project.scripts]
 ttlab = "tensortrade_lab.cli:main"
 
+[tool.uv]
+conflicts = [[{ extra = "cpu" }, { extra = "cu130" }]]
+
 [tool.uv.sources]
 tensortrade = { git = "https://github.com/tensortrade-org/tensortrade.git", rev = "d58afba23deb1fded39793203b7997c3990bb032" }
+torch = [
+  { index = "pytorch-cpu", extra = "cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cu130", extra = "cu130", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
